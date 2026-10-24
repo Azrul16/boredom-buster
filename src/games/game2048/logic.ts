@@ -25,12 +25,12 @@ export function slide(board: Board, direction: number) {
   }
   return { board: next, score, changed: next.some((v, i) => v !== board[i]) };
 }
-export function spawn(board: Board) {
+export function spawn(board: Board, fourChance = 0.1) {
   const empty = board.flatMap((v, i) => (v ? [] : [i]));
   if (!empty.length) return board;
   const next = [...board];
   next[empty[Math.floor(Math.random() * empty.length)]] =
-    Math.random() < 0.9 ? 2 : 4;
+    Math.random() < 1 - fourChance ? 2 : 4;
   return next;
 }
 export function canMove(board: Board) {

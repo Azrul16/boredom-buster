@@ -1,4 +1,6 @@
 "use client";
+import { useGameLook } from "@/components/Personalization";
+import { useDifficulty } from "@/components/GameSettings";
 import GameResult from "@/components/GameResult";
 import { useEffect, useRef, useState } from "react";
 import { Directions, Overlay, Toolbar } from "@/components/GameUI";
@@ -25,6 +27,7 @@ function food(body: Point[]): Point {
   return empty[Math.floor(Math.random() * empty.length)] || { x: -1, y: -1 };
 }
 export default function Snake() {
+  const { palette, surface } = useGameLook("snake");
   const canvas = useRef<HTMLCanvasElement>(null),
     state = useRef({
       body: [
@@ -42,8 +45,8 @@ export default function Snake() {
   const [phase, setPhase] = useState<"idle" | "playing" | "paused" | "over">(
       "idle",
     ),
-    [score, setScore] = useState(0),
-    [difficulty, setDifficulty] = useState("classic");
+    [score, setScore] = useState(0);
+  const { difficulty } = useDifficulty();
   const { best, finish, updateBest } = useGame("snake");
   useCanvasResolution(canvas, 440, 440);
   function reset(play = false) {
@@ -71,11 +74,13 @@ export default function Snake() {
     const ctx = canvas.current?.getContext("2d");
     if (!ctx) return;
     const s = state.current;
-    drawGarden(ctx, s.body, s.food, s.dir);
+    drawGarden(ctx, s.body, s.food, s.dir, palette, surface);
   }
   useEffect(() => {
-    draw();
-  }, []);
+    const ctx = canvas.current?.getContext("2d");
+    const s = state.current;
+    if (ctx) drawGarden(ctx, s.body, s.food, s.dir, palette, surface);
+  }, [palette, surface]);
   useEffect(() => {
     const pause = () => {
       if (document.hidden) setPhase((p) => (p === "playing" ? "paused" : p));
@@ -90,7 +95,7 @@ export default function Snake() {
       s.elapsed <
       Math.max(
         0.065,
-        (difficulty === "chill" ? 0.22 : difficulty === "fast" ? 0.115 : 0.16) -
+        (difficulty === "easy" ? 0.22 : difficulty === "hard" ? 0.115 : 0.16) -
           s.score / 20000,
       )
     )
@@ -154,20 +159,6 @@ export default function Snake() {
           )
         }
       />
-      <div className="game-options compact-options">
-        <select
-          aria-label="Snake speed"
-          value={difficulty}
-          onChange={(e) => {
-            setDifficulty(e.target.value);
-            reset();
-          }}
-        >
-          <option value="chill">Chill</option>
-          <option value="classic">Classic</option>
-          <option value="fast">Fast</option>
-        </select>
-      </div>
       <div
         className="canvas-wrap"
         style={{ maxWidth: 440, margin: "auto" }}

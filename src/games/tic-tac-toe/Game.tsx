@@ -1,4 +1,5 @@
 "use client";
+import { useDifficulty } from "@/components/GameSettings";
 import GameResult from "@/components/GameResult";
 import { useEffect, useState } from "react";
 import { bestMove, winner, Mark } from "./logic";
@@ -6,10 +7,10 @@ import { Toolbar } from "@/components/GameUI";
 import { useGame } from "@/hooks/useGame";
 import { sound } from "@/lib/audio";
 export default function TicTacToe() {
+  const { difficulty } = useDifficulty();
   const [board, setBoard] = useState<Mark[]>(Array(9).fill(null)),
     [turn, setTurn] = useState<Mark>("X"),
     [mode, setMode] = useState("cpu"),
-    [difficulty, setDifficulty] = useState("hard"),
     [scores, setScores] = useState({ X: 0, O: 0, draw: 0 });
   const { finish } = useGame("tic-tac-toe");
   const line = winner(board),
@@ -38,10 +39,23 @@ export default function TicTacToe() {
     if (mode !== "cpu" || turn !== "O" || done) return;
     const timer = setTimeout(() => {
       const choices = board.flatMap((v, i) => (v ? [] : [i]));
+      const tactical =
+        choices.find((index) => {
+          const next = [...board];
+          next[index] = "O";
+          return !!winner(next);
+        }) ??
+        choices.find((index) => {
+          const next = [...board];
+          next[index] = "X";
+          return !!winner(next);
+        });
       const i =
         difficulty === "hard"
           ? bestMove(board)
-          : choices[Math.floor(Math.random() * choices.length)];
+          : difficulty === "medium" && tactical !== undefined
+            ? tactical
+            : choices[Math.floor(Math.random() * choices.length)];
       setBoard((b) => b.map((v, j) => (i === j ? "O" : v)));
       setTurn("X");
     }, 350);
@@ -50,7 +64,7 @@ export default function TicTacToe() {
   return (
     <>
       <Toolbar
-        stats={[["Mode", mode === "cpu" ? "vs CPU" : "2 players"]]}
+        stats={[["Mode", mode === "cpu" ? "vs Ziggy" : "2 players"]]}
         onRestart={reset}
       />
       <div className="game-options">
@@ -62,22 +76,9 @@ export default function TicTacToe() {
             reset();
           }}
         >
-          <option value="cpu">Player vs Computer</option>
+          <option value="cpu">You vs Ziggy</option>
           <option value="local">Local 2 Player</option>
         </select>
-        {mode === "cpu" && (
-          <select
-            aria-label="Computer difficulty"
-            value={difficulty}
-            onChange={(e) => {
-              setDifficulty(e.target.value);
-              reset();
-            }}
-          >
-            <option value="easy">Easy</option>
-            <option value="hard">Hard · Unbeatable</option>
-          </select>
-        )}
       </div>
       <div className="ttt">
         {board.map((mark, i) => (
@@ -118,17 +119,21 @@ export default function TicTacToe() {
           ? `${board[line[0]]} wins!`
           : done
             ? "A well-played draw."
-            : `${turn}’s turn${turn === "O" && mode === "cpu" ? " · Thinking…" : ""}`}
+            : turn === "O" && mode === "cpu"
+              ? "Ziggy is thinking…"
+              : `${turn}’s turn`}
       </p>
       <div className="score-row">
         <span>
-          X wins<b>{scores.X}</b>
+          {mode === "cpu" ? "You (X)" : "X wins"}
+          <b>{scores.X}</b>
         </span>
         <span>
           Draws<b>{scores.draw}</b>
         </span>
         <span>
-          O wins<b>{scores.O}</b>
+          {mode === "cpu" ? "Ziggy (O)" : "O wins"}
+          <b>{scores.O}</b>
         </span>
       </div>
       <div className="game-options">
@@ -147,11 +152,19 @@ export default function TicTacToe() {
       </div>
       {done && (
         <GameResult
-          title={line ? board[line[0]] + " wins!" : "Draw"}
+          title={
+            line
+              ? mode === "cpu"
+                ? board[line[0]] === "X"
+                  ? "You beat Ziggy!"
+                  : "Ziggy wins!"
+                : board[line[0]] + " wins!"
+              : "Draw"
+          }
           stats={[
-            ["X", scores.X],
+            [mode === "cpu" ? "You (X)" : "X", scores.X],
             ["Draws", scores.draw],
-            ["O", scores.O],
+            [mode === "cpu" ? "Ziggy (O)" : "O", scores.O],
           ]}
           celebrate={!!line && (mode === "local" || board[line[0]] === "X")}
           highlight={line ? (board[line[0]] === "X" ? 0 : 2) : undefined}

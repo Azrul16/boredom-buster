@@ -1,5 +1,13 @@
 import { readStore, writeStore } from "./storage";
-import type { GameSlug } from "@/data/games";
+import { games, type GameSlug } from "@/data/games";
+import { difficulties, isDifficulty, type Difficulty } from "./difficulty";
+export type SavedResult = {
+  game: GameSlug;
+  difficulty: Difficulty;
+  score: number;
+  won: boolean;
+  at: string;
+};
 export type Profile = {
   xp: number;
   played: number;
@@ -7,6 +15,8 @@ export type Profile = {
   lastDay: string;
   wins: Record<string, number>;
   best: Record<string, number>;
+  modeBest: Record<string, Partial<Record<Difficulty, number>>>;
+  results: SavedResult[];
   achievements: string[];
   daily: { date: string; done: string[]; penWins: number };
 };
@@ -17,6 +27,8 @@ export const emptyProfile: Profile = {
   lastDay: "",
   wins: {},
   best: {},
+  modeBest: {},
+  results: [],
   achievements: [],
   daily: { date: "", done: [], penWins: 0 },
 };
@@ -60,21 +72,109 @@ export function getProfile(): Profile {
   return {
     ...emptyProfile,
     ...p,
-    wins: { ...(p.wins || {}) },
-    best: { ...(p.best || {}) },
-    achievements: [...(p.achievements || [])],
+    xp: validNumber(p.xp),
+    played: validNumber(p.played),
+    streak: validNumber(p.streak),
+    lastDay: typeof p.lastDay === "string" ? p.lastDay : "",
+    wins: numberMap(p.wins),
+    best: numberMap(p.best),
+    modeBest: Object.fromEntries(
+      games.map(({ slug }) => [
+        slug,
+        Object.fromEntries(
+          difficulties.flatMap((mode) => {
+            const value = p.modeBest?.[slug]?.[mode];
+            return typeof value === "number" &&
+              Number.isFinite(value) &&
+              value > 0
+              ? [[mode, value]]
+              : [];
+          }),
+        ),
+      ]),
+    ),
+    results: Array.isArray(p.results)
+      ? p.results
+          .filter(
+            (result): result is SavedResult =>
+              !!result &&
+              typeof result === "object" &&
+              games.some((g) => g.slug === result.game) &&
+              isDifficulty(result.difficulty) &&
+              typeof result.score === "number" &&
+              Number.isFinite(result.score) &&
+              result.score >= 0 &&
+              typeof result.won === "boolean" &&
+              typeof result.at === "string" &&
+              Number.isFinite(Date.parse(result.at)),
+          )
+          .slice(-100)
+      : [],
+    achievements: Array.isArray(p.achievements)
+      ? p.achievements.filter((value) => typeof value === "string")
+      : [],
     daily:
       p.daily?.date === localDay()
-        ? { ...p.daily, done: [...p.daily.done] }
+        ? {
+            ...p.daily,
+            penWins: validNumber(p.daily.penWins),
+            done: Array.isArray(p.daily.done)
+              ? p.daily.done.filter((value) => typeof value === "string")
+              : [],
+          }
         : { date: localDay(), done: [], penWins: 0 },
   };
 }
-export function saveBest(slug: GameSlug, score: number) {
+function validNumber(value: unknown) {
+  return typeof value === "number" && Number.isFinite(value) && value >= 0
+    ? value
+    : 0;
+}
+function numberMap(value: unknown): Record<string, number> {
+  return value && typeof value === "object"
+    ? Object.fromEntries(
+        Object.entries(value).filter(
+          ([, n]) => typeof n === "number" && Number.isFinite(n) && n >= 0,
+        ),
+      )
+    : {};
+}
+function updateModeBest(
+  p: Profile,
+  slug: GameSlug,
+  mode: Difficulty,
+  score: number,
+) {
+  if (!Number.isFinite(score) || score <= 0) return;
+  const low = slug === "reaction-time" || slug === "memory-match";
+  const old = p.modeBest[slug]?.[mode];
+  p.modeBest[slug] = {
+    ...p.modeBest[slug],
+    [mode]:
+      old === undefined
+        ? score
+        : low
+          ? Math.min(old, score)
+          : Math.max(old, score),
+  };
+}
+export function saveBest(
+  slug: GameSlug,
+  score: number,
+  difficulty: Difficulty = "medium",
+) {
   const p = getProfile();
-  if (score <= 0 || (p.best[slug] !== undefined && score <= p.best[slug]))
-    return p.best[slug];
-  p.best[slug] = score;
-  writeStore("profile", p);
+  if (!Number.isFinite(score) || score <= 0)
+    return p.modeBest[slug]?.[difficulty];
+  const previous = p.modeBest[slug]?.[difficulty];
+  const low = slug === "reaction-time" || slug === "memory-match";
+  if (previous !== undefined && (low ? score >= previous : score <= previous))
+    return previous;
+  updateModeBest(p, slug, difficulty, score);
+  p.best[slug] =
+    slug === "reaction-time" || slug === "memory-match"
+      ? Math.min(p.best[slug] ?? Infinity, score)
+      : Math.max(p.best[slug] ?? 0, score);
   const key =
     slug === "snake"
       ? "snake_highscore"
@@ -83,17 +183,24 @@ export function saveBest(slug: GameSlug, score: number) {
         : slug === "flappy"
           ? "flappy_best"
           : null;
-  if (key) writeStore(key, score);
+  if (key) writeStore(key, p.best[slug]);
+  writeStore("profile", p);
   window.dispatchEvent(new Event("timepass-progress"));
-  return score;
+  return p.modeBest[slug]?.[difficulty];
 }
 export function recordGame(
   slug: GameSlug,
   score: number,
   won = false,
   details?: { tile?: number },
+  difficulty: Difficulty = "medium",
 ) {
   const p = getProfile();
+  if (!Number.isFinite(score) || score < 0) return p;
+  p.results = [
+    ...p.results,
+    { game: slug, difficulty, score, won, at: new Date().toISOString() },
+  ].slice(-100);
   const today = localDay();
   if (p.lastDay !== today) {
     const yesterday = new Date();
@@ -106,6 +213,7 @@ export function recordGame(
   if (won) p.wins[slug] = (p.wins[slug] || 0) + 1;
   const low = slug === "reaction-time" || slug === "memory-match";
   if (score > 0 && (!low || won || slug === "reaction-time")) {
+    updateModeBest(p, slug, difficulty, score);
     p.best[slug] =
       p.best[slug] === undefined
         ? score

@@ -4,6 +4,9 @@ import { games } from "@/data/games";
 import { siteOrigin } from "@/lib/site";
 import { GameCard } from "@/components/GameCard";
 import GameLoader from "@/components/GameLoader";
+import { GameStage } from "@/components/GameStage";
+import { BotBadge, botGames } from "@/components/Bot";
+import { ArrowLeft, ArrowRight, BookOpen, ChevronDown } from "lucide-react";
 export function generateStaticParams() {
   return games.map((g) => ({ slug: g.slug }));
 }
@@ -36,12 +39,11 @@ export default async function GamePage({
   const { slug } = await params;
   const game = games.find((g) => g.slug === slug);
   if (!game) notFound();
-  const more = games
-    .filter((g) => g.slug !== slug)
-    .slice(
-      (games.findIndex((g) => g.slug === slug) + 1) % 7,
-      ((games.findIndex((g) => g.slug === slug) + 1) % 7) + 3,
-    );
+  const index = games.findIndex((g) => g.slug === slug);
+  const more = Array.from(
+    { length: 3 },
+    (_, offset) => games[(index + offset + 1) % games.length],
+  );
   return (
     <div className="wrap game-page">
       <script
@@ -63,26 +65,37 @@ export default async function GamePage({
       />
       <div className="game-heading">
         <Link href="/games/" className="back-games" aria-label="Back to games">
-          ←
+          <ArrowLeft size={19} />
         </Link>
         <div>
           <h1>{game.title}</h1>
         </div>
+        {botGames.has(game.slug) && <BotBadge />}
       </div>
       <div className="game-body">
-        <section
-          className={`game-stage game-theme-${game.slug}`}
-          aria-label={`${game.title} game`}
-        >
+        <GameStage slug={game.slug} label={`${game.title} game`}>
           <GameLoader slug={game.slug} />
-        </section>
+        </GameStage>
         <details className="game-help">
-          <summary>How to play</summary>
+          <summary>
+            <span>
+              <BookOpen size={18} />
+              <span>How to play</span>
+            </span>
+            <ChevronDown size={17} />
+          </summary>
           <p>{game.help}</p>
         </details>
       </div>
       <section className="more-games">
-        <h2>More games</h2>
+        <div className="more-heading">
+          <div>
+            <h2>More games</h2>
+          </div>
+          <Link href="/games/" className="text-link">
+            All games <ArrowRight size={16} />
+          </Link>
+        </div>
         <div className="games-grid">
           {more.map((g) => (
             <GameCard key={g.slug} game={g} />

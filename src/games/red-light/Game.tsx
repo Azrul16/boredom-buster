@@ -1,12 +1,16 @@
 "use client";
 import GameResult from "@/components/GameResult";
+import { useDifficulty } from "@/components/GameSettings";
 import { useEffect, useRef, useState } from "react";
 import { Overlay, Toolbar } from "@/components/GameUI";
 import { useCanvasResolution, useFrame, useGame } from "@/hooks/useGame";
 import { sound } from "@/lib/audio";
 import { drawRace } from "@/lib/gameArt";
+import { useGameLook } from "@/components/Personalization";
 type Signal = "green" | "amber" | "red";
 export default function RedLight() {
+  const { palette } = useGameLook("red-light-green-light");
+  const { level } = useDifficulty();
   const canvas = useRef<HTMLCanvasElement>(null),
     state = useRef({
       progress: 0,
@@ -85,7 +89,10 @@ export default function RedLight() {
               : "green";
         s.remaining =
           s.signal === "amber"
-            ? Math.max(0.32, 0.65 - s.progress * 0.003)
+            ? Math.max(
+                [0.55, 0.32, 0.2][level],
+                [0.9, 0.65, 0.4][level] - s.progress * 0.003,
+              )
             : s.signal === "green"
               ? Math.max(0.65, 1.5 + Math.random() * 1.3 - s.progress * 0.007)
               : 1 + Math.random() * 1.5;
@@ -99,7 +106,7 @@ export default function RedLight() {
           sound("lose");
           s.held = false;
         } else {
-          s.progress = Math.min(100, s.progress + dt * 14);
+          s.progress = Math.min(100, s.progress + dt * [16, 14, 12][level]);
           setProgress(Math.floor(s.progress));
           if (s.progress >= 100) {
             setPhase("won");
@@ -110,7 +117,7 @@ export default function RedLight() {
         }
       }
     }
-    drawRace(ctx, s, portrait);
+    drawRace(ctx, s, portrait, palette);
   });
   return (
     <>

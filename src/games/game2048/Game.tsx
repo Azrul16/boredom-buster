@@ -1,5 +1,6 @@
 "use client";
 import GameResult from "@/components/GameResult";
+import { useDifficulty } from "@/components/GameSettings";
 import { useEffect, useRef, useState } from "react";
 import { movementTargets } from "./motion";
 import { Toolbar, Directions } from "@/components/GameUI";
@@ -7,8 +8,10 @@ import { useGame, useKeys } from "@/hooks/useGame";
 import { canMove, slide, spawn } from "./logic";
 import { sound } from "@/lib/audio";
 export default function Game2048() {
+  const { level } = useDifficulty();
+  const fourChance = [0.05, 0.1, 0.25][level];
   const [board, setBoard] = useState(() =>
-      spawn(spawn(Array<number>(16).fill(0))),
+      spawn(spawn(Array<number>(16).fill(0), fourChance), fourChance),
     ),
     [score, setScore] = useState(0),
     [won, setWon] = useState(false),
@@ -27,7 +30,7 @@ export default function Game2048() {
   function reset() {
     if (timer.current) clearTimeout(timer.current);
     setTargets(null);
-    setBoard(spawn(spawn(Array<number>(16).fill(0))));
+    setBoard(spawn(spawn(Array<number>(16).fill(0), fourChance), fourChance));
     setScore(0);
     setWon(false);
     setOver(false);
@@ -37,7 +40,7 @@ export default function Game2048() {
     if (over || won || targets) return;
     const result = slide(board, d);
     if (!result.changed) return;
-    const next = spawn(result.board),
+    const next = spawn(result.board, fourChance),
       points = score + result.score,
       max = Math.max(...next),
       dead = !canMove(next);

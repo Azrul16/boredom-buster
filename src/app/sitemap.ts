@@ -9,6 +9,7 @@ export default function sitemap(): MetadataRoute.Sitemap {
     "/games",
     "/about",
     "/privacy",
+    "/progress",
     ...games.map((g) => `/games/${g.slug}`),
   ].map((path) => ({
     url: `${base}${path}/`,

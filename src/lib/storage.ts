@@ -10,7 +10,13 @@ export function readStore<T>(key: string, fallback: T): T {
 export function writeStore<T>(key: string, value: T) {
   try {
     localStorage.setItem(`timepass_${key}`, JSON.stringify(value));
+    window.dispatchEvent(new CustomEvent("timepass-storage", { detail: true }));
+    return true;
   } catch {
-    /* Private browsing and full storage must not interrupt play. */
+    if (typeof window !== "undefined")
+      window.dispatchEvent(
+        new CustomEvent("timepass-storage", { detail: false }),
+      );
+    return false;
   }
 }

@@ -1,5 +1,7 @@
 "use client";
+import { useGameLook } from "@/components/Personalization";
 import GameResult from "@/components/GameResult";
+import { useDifficulty } from "@/components/GameSettings";
 import { useEffect, useRef, useState } from "react";
 import { Overlay, Toolbar } from "@/components/GameUI";
 import {
@@ -18,6 +20,8 @@ function initial() {
   return { y: 250, vy: 0, gates: [] as Gate[], spawn: 0, score: 0, time: 0 };
 }
 export default function Flappy() {
+  const { palette, surface } = useGameLook("flappy");
+  const { level } = useDifficulty();
   const canvas = useRef<HTMLCanvasElement>(null),
     state = useRef(initial());
   const [phase, setPhase] = useState<"idle" | "playing" | "paused" | "over">(
@@ -55,8 +59,11 @@ export default function Flappy() {
     const s = state.current,
       ctx = canvas.current?.getContext("2d");
     if (!ctx) return;
-    const gap = Math.max(128, 175 - s.score * 2),
-      speed = 145 + Math.min(s.score * 3, 65);
+    const gap = Math.max(
+        [155, 128, 105][level],
+        [210, 175, 145][level] - s.score * 2,
+      ),
+      speed = [120, 145, 180][level] + Math.min(s.score * 3, 65);
     if (phase === "playing") {
       s.time += dt;
       s.vy += 820 * dt;
@@ -101,7 +108,7 @@ export default function Flappy() {
         sound("lose");
       }
     }
-    drawFlight(ctx, s);
+    drawFlight(ctx, s, palette, surface);
   });
   return (
     <>

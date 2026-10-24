@@ -1,7 +1,7 @@
 "use client";
 import { useEffect, useState } from "react";
 import { RotateCcw, Pause, Play, Maximize2, Minimize2 } from "lucide-react";
-import { Mute } from "./Shell";
+import { Mute } from "./SoundToggle";
 export function Toolbar({
   stats,
   onRestart,
@@ -20,7 +20,11 @@ export function Toolbar({
     return () => document.removeEventListener("fullscreenchange", sync);
   }, []);
   return (
-    <div className="game-toolbar">
+    <div
+      className="game-toolbar"
+      role="group"
+      aria-label="Scores and game controls"
+    >
       <div className="stats">
         {stats.map(([label, value]) => (
           <div className="stat" key={label}>
@@ -113,7 +117,7 @@ export function Overlay({
         <Play size={27} fill="currentColor" />
       </span>
       <h2>{title}</h2>
-      <p>{description}</p>
+      <span className="sr-only">{description}</span>
       <button
         className="button"
         onClick={(e) => {

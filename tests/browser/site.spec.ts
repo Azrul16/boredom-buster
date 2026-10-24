@@ -1,16 +1,6 @@
 import { test, expect } from "@playwright/test";
-const slugs = [
-  "pen-fight",
-  "tic-tac-toe",
-  "snake",
-  "rock-paper-scissors",
-  "2048",
-  "memory-match",
-  "pong",
-  "flappy",
-  "reaction-time",
-  "red-light-green-light",
-];
+import { games } from "../../src/data/games";
+const slugs = games.map((game) => game.slug);
 test("every route renders, restarts, and fits desktop and 320px mobile without runtime errors", async ({
   page,
 }) => {
@@ -22,7 +12,9 @@ test("every route renders, restarts, and fits desktop and 320px mobile without r
   for (const width of [1280, 320]) {
     await page.setViewportSize({ width, height: 850 });
     await page.goto("/");
-    await expect(page.getByRole("heading", { name: "Games 10" })).toBeVisible();
+    await expect(
+      page.getByRole("heading", { name: `Games ${games.length}` }),
+    ).toBeVisible();
     expect(
       await page.evaluate(
         () => document.documentElement.scrollWidth <= innerWidth,
@@ -57,7 +49,9 @@ test("theme, catalog filtering, and mobile navigation work", async ({
   await expect(page.locator("html")).toHaveAttribute("data-theme", theme!);
   await page.goto("/games/");
   await page.getByRole("button", { name: "Puzzle", exact: true }).click();
-  await expect(page.locator(".games-grid .game-card")).toHaveCount(2);
+  await expect(page.locator(".games-grid .game-card")).toHaveCount(
+    games.filter((game) => game.category === "Puzzle").length,
+  );
   await page.getByRole("button", { name: "All games", exact: true }).click();
   await page.getByRole("textbox", { name: "Search games" }).fill("Snake");
   await expect(page.locator(".games-grid .game-card")).toHaveCount(1);
@@ -90,7 +84,9 @@ test("local tic tac toe completes, records XP, and resets scores", async ({
   await expect(page.locator('.status[role="status"]')).toHaveText("X’s turn");
   await expect(cells.nth(0)).toHaveText("");
   await page.goto("/");
-  await expect(page.locator(".game-library .game-card")).toHaveCount(10);
+  await expect(page.locator(".game-library .game-card")).toHaveCount(
+    games.length,
+  );
 });
 test("reaction early click, valid result, saved best and average", async ({
   page,
@@ -182,22 +178,28 @@ test("arcade games start, pause, use touch buttons, and restart", async ({
 });
 test("2048 responds to keyboard and on-screen controls", async ({ page }) => {
   await page.goto("/games/2048/");
-  const before = await page.locator(".board-2048").textContent();
+  await page.getByRole("button", { name: "Restart", exact: true }).waitFor();
+  await page.evaluate(() => {
+    Math.random = () => 0;
+  });
+  await page.getByRole("button", { name: "Restart", exact: true }).click();
   await page.keyboard.press("ArrowLeft");
+  await expect(page.locator('.tile[data-value="4"]')).toHaveCount(1);
   await page.getByRole("button", { name: "Move down" }).click();
-  await expect(page.locator(".board-2048")).not.toHaveText(before!);
+  await expect(page.locator(".tile")).toHaveCount(3);
   await page.getByRole("button", { name: "Restart", exact: true }).click();
   await expect(page.locator(".tile").filter({ hasText: /^[24]$/ })).toHaveCount(
     2,
   );
 });
-test("Pen Fight flicks resolve to a CPU turn and return control", async ({
+test("Pen Fight flicks resolve to a Ziggy turn and return control", async ({
   page,
 }) => {
   await page.goto("/games/pen-fight/");
   await expect(
     page.getByRole("progressbar", { name: "Pull power" }),
   ).toHaveAttribute("aria-valuenow", "0");
+  await page.locator(".pen-desk canvas").scrollIntoViewIfNeeded();
   const desk = (await page.locator(".pen-desk canvas").boundingBox())!;
   await page.mouse.move(
     desk.x + (230 / 680) * desk.width,
@@ -263,7 +265,10 @@ test("difficulty, fullscreen, and keyboard after clicking controls work", async 
   page,
 }) => {
   await page.goto("/games/pong/");
-  await page.getByLabel("Pong difficulty").selectOption("hard");
+  await page
+    .getByRole("group", { name: "Game difficulty", exact: true })
+    .getByRole("button", { name: "Hard", exact: true })
+    .click();
   await page.getByRole("button", { name: "Start Pong" }).click();
   await page.getByRole("button", { name: "Fullscreen game" }).click();
   await expect
@@ -273,8 +278,15 @@ test("difficulty, fullscreen, and keyboard after clicking controls work", async 
   await page.getByRole("button", { name: "Restart", exact: true }).click();
   await expect(page.getByRole("button", { name: "Start Pong" })).toBeVisible();
   await page.goto("/games/snake/");
-  await page.getByLabel("Snake speed").selectOption("chill");
-  await expect(page.getByLabel("Snake speed")).toHaveValue("chill");
+  await page
+    .getByRole("group", { name: "Game difficulty", exact: true })
+    .getByRole("button", { name: "Easy", exact: true })
+    .click();
+  await expect(
+    page
+      .getByRole("group", { name: "Game difficulty", exact: true })
+      .getByRole("button", { name: "Easy", exact: true }),
+  ).toHaveAttribute("aria-pressed", "true");
   await page.goto("/games/2048/");
   await page.getByRole("button", { name: "Restart", exact: true }).waitFor();
   await page.evaluate(() => {
@@ -319,6 +331,7 @@ test("touch play, swipe input, storage denial, and red-light movement work", asy
   await page.goto("/games/red-light-green-light/");
   await page.getByRole("button", { name: "Start race" }).tap();
   const move = page.getByRole("button", { name: "HOLD TO MOVE", exact: false });
+  await move.scrollIntoViewIfNeeded();
   const moveBox = (await move.boundingBox())!;
   await page.mouse.move(
     moveBox.x + moveBox.width / 2,

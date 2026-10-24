@@ -13,6 +13,8 @@ import { Toolbar } from "@/components/GameUI";
 import ResultPopup from "./ResultPopup";
 import { useCanvasResolution, useFrame, useGame } from "@/hooks/useGame";
 import { sound } from "@/lib/audio";
+import { useGameLook } from "@/components/Personalization";
+import { useDifficulty } from "@/components/GameSettings";
 type World = {
   engine: Engine;
   pens: Body[];
@@ -27,6 +29,12 @@ const W = 680,
   H = 420,
   edge = 32;
 export default function PenFight() {
+  const { palette, surface } = useGameLook("pen-fight");
+  const colorName = useRef(palette?.name.toLowerCase() ?? "purple");
+  useEffect(() => {
+    colorName.current = palette?.name.toLowerCase() ?? "purple";
+  }, [palette]);
+  const { level } = useDifficulty();
   const canvas = useRef<HTMLCanvasElement>(null),
     world = useRef<World | null>(null),
     rounds = useRef([0, 0]),
@@ -42,7 +50,7 @@ export default function PenFight() {
     [scores, setScores] = useState([0, 0]),
     [roundWon, setRoundWon] = useState(false),
     [status, setStatus] = useState(
-      "Grab your purple pen, pull back, and release.",
+      `Grab your ${palette ? palette.name.toLowerCase() : "purple"} pen, pull back, and release.`,
     ),
     [phase, setPhase] = useState<"aim" | "moving" | "round">("aim");
   const { best, finish } = useGame("pen-fight");
@@ -65,7 +73,7 @@ export default function PenFight() {
       accumulator: 0,
     };
     setPhase("aim");
-    setStatus("Grab your purple pen, pull back, and release.");
+    setStatus(`Grab your ${colorName.current} pen, pull back, and release.`);
   }
   useEffect(() => {
     setup();
@@ -144,7 +152,9 @@ export default function PenFight() {
       e.pointerType === "touch" ? Math.max(12, (18 * W) / rect.width) : 10,
     );
     if (!anchor) {
-      setStatus("Grab the purple pen to start a flick.");
+      setStatus(
+        `Grab the ${palette ? palette.name.toLowerCase() : "purple"} pen to start a flick.`,
+      );
       return;
     }
     e.preventDefault();
@@ -217,7 +227,7 @@ export default function PenFight() {
         });
         setPhase("round");
         setStatus(
-          `${playerWon ? "You win" : "CPU wins"} round ${next[0] + next[1]}.`,
+          `${playerWon ? "You win" : "Ziggy wins"} round ${next[0] + next[1]}.`,
         );
         finish(next[0], playerWon);
         sound(playerWon ? "win" : "lose");
@@ -235,7 +245,7 @@ export default function PenFight() {
           if (s.turn === "player") {
             s.turn = "cpu";
             s.cpuDelay = 0.7;
-            setStatus("CPU is lining up a flick…");
+            setStatus("Ziggy is lining up a flick…");
           } else {
             s.turn = "player";
             setPhase("aim");
@@ -256,13 +266,22 @@ export default function PenFight() {
         const distance = Vector.magnitude(
           Vector.sub(player.position, cpu.position),
         );
-        impulse(cpu, direction, Math.min(88, 36 + distance * 0.15));
-        setStatus("CPU flicked. Hold your breath.");
+        impulse(
+          cpu,
+          direction + (Math.random() - 0.5) * [0.7, 0.25, 0.06][level],
+          Math.min(100, (36 + distance * 0.15) * [0.75, 1, 1.2][level]),
+        );
+        setStatus("Ziggy flicked.");
       }
     }
     ctx.fillStyle = "#171a23";
     ctx.fillRect(0, 0, W, H);
-    ctx.fillStyle = "#916b48";
+    ctx.fillStyle =
+      surface === "midnight"
+        ? "#3e4b5c"
+        : surface === "arcade"
+          ? "#40304f"
+          : "#916b48";
     ctx.beginPath();
     ctx.roundRect(edge, edge, W - edge * 2, H - edge * 2, 14);
     ctx.fill();
@@ -384,9 +403,9 @@ export default function PenFight() {
       ctx.shadowBlur = 8;
       ctx.shadowOffsetY = 7;
       const gradient = ctx.createLinearGradient(0, -7, 0, 7);
-      gradient.addColorStop(0, i ? "#ffb1a2" : "#cbb8ff");
-      gradient.addColorStop(0.45, i ? "#d46f64" : "#8a6cdb");
-      gradient.addColorStop(1, i ? "#9c4841" : "#6046a6");
+      gradient.addColorStop(0, i ? "#ffb1a2" : (palette?.light ?? "#cbb8ff"));
+      gradient.addColorStop(0.45, i ? "#d46f64" : (palette?.base ?? "#8a6cdb"));
+      gradient.addColorStop(1, i ? "#9c4841" : (palette?.dark ?? "#6046a6"));
       ctx.fillStyle = gradient;
       ctx.beginPath();
       ctx.roundRect(-61, -7, 122, 14, 4);
@@ -401,6 +420,13 @@ export default function PenFight() {
       ctx.fill();
       ctx.fillStyle = "#eee";
       ctx.fillRect(22, -9, 31, 3);
+      if (palette) {
+        ctx.font = "bold 7px Arial";
+        ctx.textAlign = "center";
+        ctx.fillStyle = "#182033";
+        ctx.fillText(i ? "Z" : "YOU", -10, 2.5);
+        ctx.textAlign = "left";
+      }
       ctx.restore();
     });
   });
@@ -425,7 +451,7 @@ export default function PenFight() {
           ref={canvas}
           width={W}
           height={H}
-          aria-label="Pen Fight desk. Grab a point on your purple pen, pull back, and release to flick."
+          aria-label={`Pen Fight desk. Grab a point on your ${palette ? palette.name.toLowerCase() : "purple"} pen, pull back, and release to flick.`}
         />
       </div>
       <p className="status" role="status">

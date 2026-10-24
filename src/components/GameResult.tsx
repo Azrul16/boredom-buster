@@ -2,14 +2,15 @@
 import { useEffect, useLayoutEffect, useId, useRef } from "react";
 import type { CSSProperties } from "react";
 import { Trophy, Medal } from "lucide-react";
+import { usePersonalization } from "./Personalization";
 
 export default function GameResult({
   title,
   stats,
   celebrate = false,
   onContinue,
-  eyebrow = "GAME COMPLETE",
-  subtitle = "Final score",
+  eyebrow = "",
+  subtitle = "",
   scoreLabel = "Result",
   highlight,
 }: {
@@ -22,6 +23,7 @@ export default function GameResult({
   scoreLabel?: string;
   highlight?: number;
 }) {
+  const { preferences } = usePersonalization();
   const dialog = useRef<HTMLDialogElement>(null),
     titleId = useId(),
     action = useRef(onContinue);
@@ -32,12 +34,14 @@ export default function GameResult({
     const element = dialog.current;
     if (!element) return;
     element.showModal();
-    const timer = setTimeout(() => action.current(), 1000);
+    const timer = preferences.autoReplay
+      ? setTimeout(() => action.current(), 1000)
+      : undefined;
     return () => {
       clearTimeout(timer);
       element.close();
     };
-  }, []);
+  }, [preferences.autoReplay]);
   return (
     <dialog
       ref={dialog}
@@ -76,12 +80,12 @@ export default function GameResult({
             })}
           </div>
         )}
-        <span className="result-eyebrow">{eyebrow}</span>
+        {eyebrow && <span className="result-eyebrow">{eyebrow}</span>}
         <div className="result-medal" aria-hidden="true">
           {celebrate ? <Trophy size={43} /> : <Medal size={43} />}
         </div>
         <h2 id={titleId}>{title}</h2>
-        <p className="result-subtitle">{subtitle}</p>
+        {subtitle && <p className="result-subtitle">{subtitle}</p>}
         <div
           className="result-scoreboard"
           aria-label={
@@ -103,9 +107,15 @@ export default function GameResult({
             </div>
           ))}
         </div>
-        <div className="result-timebar" aria-label="Next game in one second">
-          <i />
-        </div>
+        {preferences.autoReplay ? (
+          <div className="result-timebar" aria-label="Next game in one second">
+            <i />
+          </div>
+        ) : (
+          <button className="button manual-rematch" onClick={onContinue}>
+            Play again
+          </button>
+        )}
       </div>
     </dialog>
   );

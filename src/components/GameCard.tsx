@@ -1,6 +1,16 @@
+"use client";
 import Link from "next/link";
-import { ArrowUpRight } from "lucide-react";
+import {
+  ArrowUpRight,
+  Trophy,
+  Heart,
+  CheckCircle2,
+  Target,
+} from "lucide-react";
 import { Game, route } from "@/data/games";
+import { botGames } from "./Bot";
+import { GameThumbnail, illustratedGames } from "./GameThumbnail";
+import { usePersonalization } from "./Personalization";
 export function GameArt({
   game,
   large = false,
@@ -14,7 +24,9 @@ export function GameArt({
       className={`game-art ${game.color} art-${game.slug} ${large ? "large" : ""}`}
     >
       <div className="art-grid" />
-      {game.slug === "pen-fight" ? (
+      {illustratedGames.has(game.slug) ? (
+        <GameThumbnail slug={game.slug} />
+      ) : game.slug === "pen-fight" ? (
         <>
           <span className="desk-line" />
           <i className="pen pen-one" />
@@ -57,33 +69,66 @@ export function GameCard({
   game,
   featured = false,
   best,
+  challenge,
 }: {
   game: Game;
   featured?: boolean;
   best?: number;
+  challenge?: { title: string; done: boolean };
 }) {
+  const { preferences, toggleFavorite } = usePersonalization();
+  const saved = preferences.favorites.includes(game.slug);
   return (
-    <Link
-      href={route(game)}
-      className={`game-card ${featured ? "featured" : ""}`}
-    >
-      <div className="art-container">
-        <GameArt game={game} />
-      </div>
-      <div className="card-copy">
-        <div className="card-title">
-          <h3>{game.title}</h3>
-          <span className="card-arrow">
-            <ArrowUpRight size={19} />
-          </span>
+    <div className="game-card-wrap">
+      <Link
+        href={route(game)}
+        className={`game-card ${featured ? "featured" : ""}`}
+      >
+        <div className="art-container">
+          <GameArt game={game} />
+          {challenge && (
+            <span
+              className={`daily-card-badge ${challenge.done ? "daily-done" : ""}`}
+              title={challenge.title}
+              aria-label={`${challenge.title}${challenge.done ? ": complete" : ""}`}
+            >
+              {challenge.done ? (
+                <CheckCircle2 size={14} />
+              ) : (
+                <Target size={14} />
+              )}
+            </span>
+          )}
+          {botGames.has(game.slug) && (
+            <span className="card-opponent">VS ZIGGY</span>
+          )}
         </div>
-        {best !== undefined && (
-          <span className="card-best">
-            Best {best}
-            {game.slug === "reaction-time" ? " ms" : ""}
-          </span>
-        )}
-      </div>
-    </Link>
+        <div className="card-copy">
+          <div className="card-title">
+            <h3>{game.title}</h3>
+            <span className="card-arrow">
+              <ArrowUpRight size={19} />
+            </span>
+          </div>
+          {challenge && <p className="daily-card-target">{challenge.title}</p>}
+          {best !== undefined && (
+            <span className="card-best">
+              <Trophy size={12} />
+              Best {best}
+              {game.slug === "reaction-time" ? " ms" : ""}
+            </span>
+          )}
+        </div>
+      </Link>
+      <button
+        className={`favorite-button ${saved ? "is-favorite" : ""}`}
+        aria-label={`${saved ? "Unfavorite" : "Favorite"} ${game.title}`}
+        aria-pressed={saved}
+        title={saved ? "Remove favorite" : "Save favorite"}
+        onClick={() => toggleFavorite(game.slug)}
+      >
+        <Heart size={15} fill={saved ? "currentColor" : "none"} />
+      </button>
+    </div>
   );
 }

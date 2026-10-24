@@ -23,21 +23,26 @@ export function useCanvasResolution(
 }
 import type { GameSlug } from "@/data/games";
 import { recordGame, getProfile, saveBest } from "@/lib/progress";
+import { useDifficulty } from "@/components/GameSettings";
 export function useGame(slug: GameSlug) {
+  const { difficulty } = useDifficulty();
   const [best, setBest] = useState<number>();
   useEffect(() => {
-    setBest(getProfile().best[slug]);
-  }, [slug]);
+    const sync = () => setBest(getProfile().modeBest[slug]?.[difficulty]);
+    sync();
+    window.addEventListener("storage", sync);
+    return () => window.removeEventListener("storage", sync);
+  }, [slug, difficulty]);
   const finish = useCallback(
     (score: number, won = false, details?: { tile?: number }) => {
-      const p = recordGame(slug, score, won, details);
-      setBest(p.best[slug]);
+      const p = recordGame(slug, score, won, details, difficulty);
+      setBest(p.modeBest[slug]?.[difficulty]);
     },
-    [slug],
+    [slug, difficulty],
   );
   const updateBest = useCallback(
-    (score: number) => setBest(saveBest(slug, score)),
-    [slug],
+    (score: number) => setBest(saveBest(slug, score, difficulty)),
+    [slug, difficulty],
   );
   return { best, finish, updateBest };
 }
@@ -53,7 +58,8 @@ export function useFrame(callback: (dt: number) => void, active = true) {
     const loop = (time: number) => {
       const dt = last ? Math.min((time - last) / 1000, 0.04) : 0;
       last = time;
-      fn.current(dt);
+      if (document.documentElement.dataset.customizing !== "true")
+        fn.current(dt);
       id = requestAnimationFrame(loop);
     };
     id = requestAnimationFrame(loop);

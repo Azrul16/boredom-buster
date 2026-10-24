@@ -1,3 +1,4 @@
+import type { GamePalette, Surface } from "./personalization";
 type Point = { x: number; y: number };
 function rounded(
   ctx: CanvasRenderingContext2D,
@@ -19,12 +20,20 @@ export function drawGarden(
   body: Point[],
   food: Point,
   dir: number,
+  palette?: GamePalette,
+  surface: Surface = "classic",
 ) {
-  ctx.fillStyle = "#a5cf64";
+  const ground =
+    surface === "midnight"
+      ? ["#172a31", "#1b3038"]
+      : surface === "arcade"
+        ? ["#27233c", "#2d2845"]
+        : ["#a5cf64", "#aed66c"];
+  ctx.fillStyle = ground[0];
   ctx.fillRect(0, 0, 440, 440);
   for (let y = 0; y < 20; y++)
     for (let x = 0; x < 20; x++) {
-      ctx.fillStyle = (x + y) % 2 ? "#a5cf64" : "#aed66c";
+      ctx.fillStyle = ground[(x + y) % 2];
       ctx.fillRect(x * 22, y * 22, 22, 22);
     }
   ctx.save();
@@ -54,7 +63,7 @@ export function drawGarden(
   ctx.lineWidth = 18;
   ctx.lineCap = "round";
   ctx.lineJoin = "round";
-  ctx.strokeStyle = "#3669c7";
+  ctx.strokeStyle = palette?.dark ?? "#3669c7";
   ctx.beginPath();
   body.forEach((p, i) => {
     if (i === 0) ctx.moveTo(p.x * 22 + 11, p.y * 22 + 11);
@@ -62,7 +71,17 @@ export function drawGarden(
   });
   ctx.stroke();
   body.forEach((p, i) => {
-    ctx.fillStyle = i === 0 ? "#558bea" : i % 2 ? "#467bdc" : "#4073d4";
+    ctx.fillStyle = palette
+      ? i === 0
+        ? palette.light
+        : i % 2
+          ? palette.base
+          : palette.dark
+      : i === 0
+        ? "#558bea"
+        : i % 2
+          ? "#467bdc"
+          : "#4073d4";
     ctx.beginPath();
     ctx.arc(p.x * 22 + 11, p.y * 22 + 11, i === 0 ? 10 : 8, 0, Math.PI * 2);
     ctx.fill();
@@ -93,12 +112,28 @@ export function drawFlight(
     score: number;
     gates: { x: number; center: number; gap: number }[];
   },
+  palette?: GamePalette,
+  surface: Surface = "classic",
 ) {
   const W = 480,
     H = 500;
   const sky = ctx.createLinearGradient(0, 0, 0, H);
-  sky.addColorStop(0, "#80cfe5");
-  sky.addColorStop(1, "#e2f3dd");
+  sky.addColorStop(
+    0,
+    surface === "midnight"
+      ? "#15243c"
+      : surface === "arcade"
+        ? "#35204b"
+        : "#80cfe5",
+  );
+  sky.addColorStop(
+    1,
+    surface === "midnight"
+      ? "#405b73"
+      : surface === "arcade"
+        ? "#d78f98"
+        : "#e2f3dd",
+  );
   ctx.fillStyle = sky;
   ctx.fillRect(0, 0, W, H);
   ctx.fillStyle = "#fff7c2";
@@ -163,10 +198,10 @@ export function drawFlight(
   ctx.shadowColor = "#416f6555";
   ctx.shadowBlur = 7;
   ctx.shadowOffsetY = 4;
-  rounded(ctx, -16, -14, 32, 28, 10, "#edaa47");
+  rounded(ctx, -16, -14, 32, 28, 10, palette?.base ?? "#edaa47");
   ctx.shadowColor = "transparent";
-  rounded(ctx, -10, -11, 25, 18, 7, "#ffd578");
-  ctx.fillStyle = "#d28636";
+  rounded(ctx, -10, -11, 25, 18, 7, palette?.light ?? "#ffd578");
+  ctx.fillStyle = palette?.dark ?? "#d28636";
   ctx.beginPath();
   ctx.ellipse(-11, 4, 12, 6, Math.sin(s.time * 24) * 0.4, 0, Math.PI * 2);
   ctx.fill();
@@ -205,12 +240,28 @@ export function drawPong(
     score: number[];
     trail: Point[];
   },
+  palette?: GamePalette,
+  surface: Surface = "classic",
 ) {
   const W = 680,
     H = 420;
   const bg = ctx.createLinearGradient(0, 0, W, H);
-  bg.addColorStop(0, "#18284b");
-  bg.addColorStop(1, "#0c142c");
+  bg.addColorStop(
+    0,
+    surface === "arcade"
+      ? "#35204b"
+      : surface === "midnight"
+        ? "#12272b"
+        : "#18284b",
+  );
+  bg.addColorStop(
+    1,
+    surface === "arcade"
+      ? "#18142e"
+      : surface === "midnight"
+        ? "#09171e"
+        : "#0c142c",
+  );
   ctx.fillStyle = bg;
   ctx.fillRect(0, 0, W, H);
   ctx.strokeStyle = "#91a3d21c";
@@ -233,8 +284,8 @@ export function drawPong(
   ctx.fillText(String(s.score[1]), W * 0.66, 130);
   ctx.textAlign = "left";
   ctx.shadowBlur = 18;
-  ctx.shadowColor = "#a985ff88";
-  rounded(ctx, 20, s.player - 40, 12, 80, 6, "#baa3ff");
+  ctx.shadowColor = palette ? palette.base + "88" : "#a985ff88";
+  rounded(ctx, 20, s.player - 40, 12, 80, 6, palette?.base ?? "#baa3ff");
   ctx.shadowColor = "#ff8b8588";
   rounded(ctx, W - 32, s.cpu - 40, 12, 80, 6, "#ff9e95");
   ctx.shadowColor = "transparent";
@@ -257,9 +308,10 @@ export function drawRace(
   ctx: CanvasRenderingContext2D,
   s: { progress: number; signal: string; time: number; held: boolean },
   portrait = false,
+  palette?: GamePalette,
 ) {
   if (portrait) {
-    drawPortraitRace(ctx, s);
+    drawPortraitRace(ctx, s, palette);
     return;
   }
   ctx.fillStyle = "#81b790";
@@ -317,7 +369,7 @@ export function drawRace(
   ctx.beginPath();
   ctx.ellipse(x, 239, 20, 6, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = "#4e3e87";
+  ctx.strokeStyle = palette?.dark ?? "#4e3e87";
   ctx.lineWidth = 7;
   ctx.lineCap = "round";
   ctx.beginPath();
@@ -326,8 +378,8 @@ export function drawRace(
   ctx.moveTo(x + 5, 221);
   ctx.lineTo(x + 8 + stride, 237);
   ctx.stroke();
-  rounded(ctx, x - 13, 190, 26, 34, 8, "#9471e8");
-  ctx.strokeStyle = "#c9adff";
+  rounded(ctx, x - 13, 190, 26, 34, 8, palette?.base ?? "#9471e8");
+  ctx.strokeStyle = palette?.light ?? "#c9adff";
   ctx.lineWidth = 5;
   ctx.beginPath();
   ctx.moveTo(x - 13, 197);
@@ -349,6 +401,7 @@ export function drawRace(
 function drawPortraitRace(
   ctx: CanvasRenderingContext2D,
   s: { progress: number; signal: string; time: number; held: boolean },
+  palette?: GamePalette,
 ) {
   ctx.fillStyle = "#81b790";
   ctx.fillRect(0, 0, 380, 520);
@@ -402,7 +455,7 @@ function drawPortraitRace(
   ctx.beginPath();
   ctx.ellipse(x, y + 23, 22, 8, 0, 0, Math.PI * 2);
   ctx.fill();
-  ctx.strokeStyle = "#4e3e87";
+  ctx.strokeStyle = palette?.dark ?? "#4e3e87";
   ctx.lineCap = "round";
   ctx.lineWidth = 8;
   ctx.beginPath();
@@ -411,8 +464,8 @@ function drawPortraitRace(
   ctx.moveTo(x + 7, y + 6);
   ctx.lineTo(x + 9 + stride, y + 24);
   ctx.stroke();
-  rounded(ctx, x - 16, y - 20, 32, 34, 9, "#9471e8");
-  ctx.strokeStyle = "#c9adff";
+  rounded(ctx, x - 16, y - 20, 32, 34, 9, palette?.base ?? "#9471e8");
+  ctx.strokeStyle = palette?.light ?? "#c9adff";
   ctx.lineWidth = 6;
   ctx.beginPath();
   ctx.moveTo(x - 15, y - 14);

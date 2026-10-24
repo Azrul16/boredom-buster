@@ -1,4 +1,6 @@
 "use client";
+import { useGameLook } from "@/components/Personalization";
+import { useDifficulty } from "@/components/GameSettings";
 import GameResult from "@/components/GameResult";
 import { useEffect, useRef, useState } from "react";
 import { Overlay, Toolbar } from "@/components/GameUI";
@@ -21,14 +23,15 @@ function initial() {
   };
 }
 export default function Pong() {
+  const { palette, surface } = useGameLook("pong");
   const canvas = useRef<HTMLCanvasElement>(null),
     state = useRef(initial()),
     keys = useRef(new Set<string>());
   const [phase, setPhase] = useState<"idle" | "playing" | "paused" | "over">(
       "idle",
     ),
-    [scores, setScores] = useState([0, 0]),
-    [difficulty, setDifficulty] = useState("normal");
+    [scores, setScores] = useState([0, 0]);
+  const { difficulty } = useDifficulty();
   const { finish } = useGame("pong");
   useCanvasResolution(canvas, W, H);
   function reset(start = false) {
@@ -122,7 +125,7 @@ export default function Pong() {
         s.vy = 100 * (Math.random() > 0.5 ? 1 : -1);
       }
     }
-    drawPong(ctx, s);
+    drawPong(ctx, s, palette, surface);
   });
   function drag(e: React.PointerEvent<HTMLDivElement>) {
     if (phase !== "playing") return;
@@ -137,7 +140,7 @@ export default function Pong() {
       <Toolbar
         stats={[
           ["You", scores[0]],
-          ["CPU", scores[1]],
+          ["Ziggy", scores[1]],
           ["Goal", 7],
         ]}
         onRestart={() => reset()}
@@ -148,20 +151,6 @@ export default function Pong() {
           )
         }
       />
-      <div className="game-options compact-options">
-        <select
-          aria-label="Pong difficulty"
-          value={difficulty}
-          onChange={(e) => {
-            setDifficulty(e.target.value);
-            reset();
-          }}
-        >
-          <option value="easy">Easy</option>
-          <option value="normal">Normal</option>
-          <option value="hard">Hard</option>
-        </select>
-      </div>
       <div
         className="canvas-wrap"
         onPointerDown={(e) => {
@@ -188,10 +177,10 @@ export default function Pong() {
       <p className="status">W / S · ↑ / ↓ · Move your mouse or drag to play</p>
       {phase === "over" && (
         <GameResult
-          title={scores[0] === 7 ? "You win!" : "CPU wins"}
+          title={scores[0] === 7 ? "You win!" : "Ziggy wins"}
           stats={[
             ["You", scores[0]],
-            ["CPU", scores[1]],
+            ["Ziggy", scores[1]],
           ]}
           celebrate={scores[0] === 7}
           highlight={scores[0] === 7 ? 0 : 1}

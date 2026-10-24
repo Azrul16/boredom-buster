@@ -96,6 +96,7 @@ test("Pen Fight ignores desk taps, tiny pulls and cancelled gestures", async ({
 }) => {
   await page.goto("/games/pen-fight/");
   await page.getByRole("progressbar", { name: "Pull power" }).waitFor();
+  await page.locator(".pen-desk canvas").scrollIntoViewIfNeeded();
   const box = (await page.locator(".pen-desk canvas").boundingBox())!;
   const point = (x: number, y: number) => ({
     x: box.x + (x / 680) * box.width,

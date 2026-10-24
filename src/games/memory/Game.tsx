@@ -1,12 +1,14 @@
 "use client";
 import GameResult from "@/components/GameResult";
+import { useDifficulty } from "@/components/GameSettings";
 import { useEffect, useRef, useState } from "react";
 import { Toolbar } from "@/components/GameUI";
 import { useGame } from "@/hooks/useGame";
 import { sound } from "@/lib/audio";
 const icons = ["🍋", "⚡", "🚀", "🎲", "🌙", "💎", "🌵", "🎧"];
-function shuffle() {
-  const a = [...icons, ...icons];
+function shuffle(pairs = 8) {
+  const choices = [...icons, "🌈", "🎯"].slice(0, pairs);
+  const a = [...choices, ...choices];
   for (let i = a.length - 1; i > 0; i--) {
     const j = Math.floor(Math.random() * (i + 1));
     [a[i], a[j]] = [a[j], a[i]];
@@ -14,7 +16,9 @@ function shuffle() {
   return a;
 }
 export default function Memory() {
-  const [cards, setCards] = useState(shuffle),
+  const { level } = useDifficulty();
+  const pairs = [6, 8, 10][level];
+  const [cards, setCards] = useState(() => shuffle(pairs)),
     [open, setOpen] = useState<number[]>([]),
     [matched, setMatched] = useState<number[]>([]),
     [moves, setMoves] = useState(0),
@@ -22,10 +26,13 @@ export default function Memory() {
     [started, setStarted] = useState(false);
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { best, finish } = useGame("memory-match");
-  const done = matched.length === 16;
+  const done = matched.length === pairs * 2;
   useEffect(() => {
     if (!started || done) return;
-    const id = setInterval(() => setSeconds((s) => s + 1), 1000);
+    const id = setInterval(() => {
+      if (document.documentElement.dataset.customizing !== "true")
+        setSeconds((s) => s + 1);
+    }, 1000);
     return () => clearInterval(id);
   }, [started, done]);
   useEffect(
@@ -36,7 +43,7 @@ export default function Memory() {
   );
   function reset() {
     if (timer.current) clearTimeout(timer.current);
-    setCards(shuffle());
+    setCards(shuffle(pairs));
     setOpen([]);
     setMatched([]);
     setMoves(0);
@@ -57,11 +64,12 @@ export default function Memory() {
         setMatched(found);
         setOpen([]);
         sound("score");
-        if (found.length === 16) {
+        if (found.length === pairs * 2) {
           finish(moves + 1, true);
           sound("win");
         }
-      } else timer.current = setTimeout(() => setOpen([]), 800);
+      } else
+        timer.current = setTimeout(() => setOpen([]), [1200, 800, 450][level]);
     }
   }
   return (
@@ -104,7 +112,7 @@ export default function Memory() {
       <p className="status" role="status">
         {done
           ? `All matched in ${moves} moves. Nicely done!`
-          : `${matched.length / 2} / 8 pairs found`}
+          : `${matched.length / 2} / ${pairs} pairs found`}
       </p>
       {done && (
         <GameResult

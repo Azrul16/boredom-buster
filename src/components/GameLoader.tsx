@@ -2,6 +2,7 @@
 import { Component as ReactComponent, useEffect, useState } from "react";
 import type { ComponentType, ReactNode } from "react";
 import type { GameSlug } from "@/data/games";
+import { GameSettings } from "./GameSettings";
 const registry: Record<GameSlug, () => Promise<{ default: ComponentType }>> = {
   "tic-tac-toe": () => import("@/games/tic-tac-toe/Game"),
   "reaction-time": () => import("@/games/reaction/Game"),
@@ -13,16 +14,28 @@ const registry: Record<GameSlug, () => Promise<{ default: ComponentType }>> = {
   pong: () => import("@/games/pong/Game"),
   flappy: () => import("@/games/flappy/Game"),
   "red-light-green-light": () => import("@/games/red-light/Game"),
+  "connect-four": () => import("@/games/connect-four/Game"),
+  minesweeper: () => import("@/games/minesweeper/Game"),
+  "sliding-puzzle": () => import("@/games/sliding-puzzle/Game"),
+  "lights-out": () => import("@/games/lights-out/Game"),
+  "mini-sudoku": () => import("@/games/mini-sudoku/Game"),
+  hangman: () => import("@/games/hangman/Game"),
+  "word-scramble": () => import("@/games/word-scramble/Game"),
+  "number-guess": () => import("@/games/number-guess/Game"),
+  "math-challenge": () => import("@/games/math-challenge/Game"),
+  "whack-a-mole": () => import("@/games/whack-a-mole/Game"),
 };
 export default function GameLoader({ slug }: { slug: GameSlug }) {
   const [version, setVersion] = useState(0);
   return (
-    <GameErrorBoundary
-      key={`${slug}:${version}`}
-      retry={() => setVersion((v) => v + 1)}
-    >
-      <LoadGame slug={slug} retry={() => setVersion((v) => v + 1)} />
-    </GameErrorBoundary>
+    <GameSettings key={slug} slug={slug}>
+      <GameErrorBoundary
+        key={`${slug}:${version}`}
+        retry={() => setVersion((v) => v + 1)}
+      >
+        <LoadGame slug={slug} retry={() => setVersion((v) => v + 1)} />
+      </GameErrorBoundary>
+    </GameSettings>
   );
 }
 

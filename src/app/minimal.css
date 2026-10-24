@@ -1,0 +1,557 @@
+/* Keep the artwork, board, and controls in front. */
+.library-tools {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-width: 0;
+}
+.quick-play-icon {
+  display: grid;
+  place-items: center;
+  width: 44px;
+  height: 44px;
+  flex-shrink: 0;
+  border: 1px solid var(--line);
+  border-radius: 11px;
+  background: var(--surface);
+  color: var(--accent);
+}
+.quick-play-icon:hover {
+  border-color: var(--accent);
+  background: var(--soft-accent);
+}
+@media (max-width: 360px) {
+  .library-tools {
+    width: 100%;
+  }
+  .library-tools .game-search {
+    flex: 1;
+    min-width: 0;
+  }
+  .library-tools .game-search input {
+    min-width: 0;
+  }
+}
+.game-library {
+  padding-top: 28px;
+}
+.play-banner {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 24px;
+  position: relative;
+  overflow: hidden;
+  min-height: 170px;
+  padding: 24px 32px;
+  margin-bottom: 32px;
+  border-radius: 26px;
+  border: 1px solid color-mix(in srgb, var(--accent), transparent 75%);
+  background:
+    radial-gradient(ellipse at 55% 60%, #a58aff18, transparent 60%),
+    var(--surface);
+}
+.banner-label {
+  font-size: 9px;
+  font-weight: 700;
+  letter-spacing: 0.18em;
+  color: var(--muted);
+}
+.play-banner h2 {
+  font-size: clamp(38px, 5vw, 60px);
+  letter-spacing: -0.07em;
+  margin: 8px 0 0;
+}
+.play-banner h2 > span {
+  color: var(--accent);
+}
+.banner-art {
+  position: absolute;
+  pointer-events: none;
+  left: 44%;
+  top: 0;
+  width: 290px;
+  height: 170px;
+}
+.banner-art .bot-avatar {
+  position: absolute;
+  width: 115px;
+  height: 115px;
+  left: 83px;
+  top: 25px;
+  transform: rotate(-9deg);
+  filter: drop-shadow(0 12px 12px #0002);
+}
+.floating-tile {
+  position: absolute;
+  display: grid;
+  place-items: center;
+  width: 46px;
+  height: 46px;
+  border-radius: 12px;
+  font-size: 27px;
+  font-weight: 800;
+  box-shadow:
+    inset 0 1px 0 #ffffff20,
+    0 9px 20px #00000012;
+}
+.tile-cross {
+  left: 18px;
+  top: 24px;
+  transform: rotate(-16deg);
+  color: #bc9aff;
+  background: #302544;
+}
+.tile-disc {
+  right: 17px;
+  top: 31px;
+  transform: rotate(16deg);
+  color: #8ce5b9;
+  background: #1c3b30;
+  font-size: 21px;
+}
+.tile-number {
+  left: 35px;
+  bottom: 17px;
+  transform: rotate(12deg);
+  color: #f2cb81;
+  background: #50402a;
+}
+.banner-spark {
+  color: var(--accent);
+  position: absolute;
+  right: 39px;
+  bottom: 15px;
+  font-size: 31px;
+}
+.shuffle-play {
+  position: relative;
+  z-index: 1;
+  display: inline-flex;
+  align-items: center;
+  gap: 9px;
+  padding: 13px 18px;
+  background: var(--primary);
+  color: #fff;
+  border: 1px solid #ffffff20;
+  border-radius: 14px;
+  font-size: 12px;
+  font-weight: 600;
+  box-shadow: 0 5px 20px #8b5cf626;
+  transition:
+    transform 0.2s,
+    box-shadow 0.2s;
+}
+.shuffle-play:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 8px 24px #8b5cf644;
+}
+.library-heading {
+  margin-bottom: 18px;
+}
+.library-filters {
+  margin-bottom: 25px;
+}
+.game-library .games-grid {
+  grid-template-columns: repeat(5, minmax(0, 1fr));
+  gap: 17px;
+}
+.game-card {
+  position: relative;
+  border-radius: 20px;
+}
+.game-card .game-art {
+  height: 165px;
+}
+.game-card .card-copy {
+  padding: 14px;
+}
+.game-card .card-title h3 {
+  font-size: 13px;
+  line-height: 1.4;
+}
+.game-card .card-arrow {
+  color: var(--accent);
+  opacity: 0.65;
+}
+.game-card .card-arrow svg {
+  width: 16px;
+  height: 16px;
+}
+.card-opponent {
+  top: 10px;
+  left: 10px;
+  font-size: 7px;
+}
+.game-card .card-best {
+  margin-top: 7px;
+  font-size: 9px;
+}
+.game-heading {
+  margin-bottom: 18px;
+}
+.game-heading h1 {
+  font-size: 27px;
+  margin: 0;
+}
+.bot-badge {
+  gap: 5px;
+  padding: 5px 10px 5px 5px;
+}
+.bot-badge .bot-avatar {
+  width: 32px;
+  height: 32px;
+}
+.bot-badge strong {
+  font-size: 12px;
+}
+.game-stage {
+  padding-top: 20px;
+}
+.game-settings {
+  display: grid;
+  grid-template-columns: minmax(0, 340px) auto;
+  align-items: center;
+  column-gap: 15px;
+  padding-bottom: 15px;
+  margin-bottom: 16px;
+}
+.game-settings .mode-buttons {
+  margin: 0;
+  max-width: none;
+  border-radius: 12px;
+  padding: 3px;
+  gap: 3px;
+}
+.game-settings .mode-buttons button {
+  min-height: 36px;
+  padding: 6px;
+  font-size: 11px;
+}
+.mode-utilities {
+  display: flex;
+  align-items: center;
+  justify-content: end;
+  gap: 10px;
+}
+.mode-personal-best {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+  color: var(--game-accent);
+}
+.mode-personal-best b {
+  font-size: 12px;
+  color: var(--arena-ink);
+}
+.mode-info-button {
+  display: grid;
+  place-items: center;
+  width: 30px;
+  height: 30px;
+  flex-shrink: 0;
+  border: 0;
+  background: transparent;
+  color: var(--arena-muted);
+  border-radius: 8px;
+}
+.mode-info-button:hover {
+  background: #ffffff0b;
+  color: var(--game-accent);
+}
+.mode-utilities .local-save-note {
+  margin: 0;
+  min-width: 24px;
+  min-height: 30px;
+  justify-content: center;
+}
+.mode-utilities .save-unavailable {
+  max-width: 100px;
+  font-size: 8px;
+}
+.game-settings .mode-tip {
+  grid-column: 1 / -1;
+  padding: 10px 12px;
+  margin-top: 12px;
+  background: #0002;
+  border-radius: 9px;
+}
+.game-stage .game-toolbar {
+  padding-bottom: 14px;
+  margin-bottom: 14px;
+}
+.game-help {
+  padding: 0 16px;
+}
+.game-help summary {
+  padding: 13px 0;
+  font-size: 11px;
+}
+.game-help summary > span {
+  gap: 9px;
+}
+.game-help summary svg {
+  width: 15px;
+  height: 15px;
+}
+.more-games {
+  margin-top: 26px;
+}
+.more-heading h2 {
+  margin: 0;
+  font-size: 20px;
+}
+.more-games .game-art {
+  height: 135px;
+}
+.mini-game .status:empty {
+  display: none;
+}
+.mini-grid {
+  margin: 16px auto;
+}
+.mini-clue {
+  font-size: 14px;
+}
+.disc-legend {
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  gap: 22px;
+  margin: 10px 0 0;
+  font-size: 11px;
+  color: var(--arena-muted);
+}
+.disc-legend > span {
+  display: inline-flex;
+  align-items: center;
+  gap: 6px;
+}
+.disc-legend i {
+  display: inline-block;
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+}
+.legend-you {
+  background: #b69aef;
+}
+.legend-rival {
+  background: #ecc16d;
+}
+.site-footer {
+  padding-top: 22px;
+  padding-bottom: 22px;
+  row-gap: 15px;
+}
+.site-footer .footer-logo {
+  font-size: 12px;
+}
+.site-footer > nav {
+  padding-top: 2px;
+  gap: 20px;
+}
+.site-footer > nav a {
+  font-size: 10px;
+}
+.site-footer .connection-badge {
+  font-size: 9px;
+}
+.site-footer .footer-connection {
+  border-top: 1px solid var(--line);
+  padding-top: 13px;
+}
+@media (max-width: 1100px) {
+  .game-library .games-grid {
+    grid-template-columns: repeat(4, minmax(0, 1fr));
+  }
+  .banner-art {
+    left: 39%;
+  }
+}
+@media (max-width: 800px) {
+  .game-library .games-grid {
+    grid-template-columns: repeat(3, minmax(0, 1fr));
+  }
+  .banner-art {
+    left: 33%;
+    opacity: 0.7;
+  }
+  .game-settings {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 12px;
+  }
+  .mode-utilities {
+    gap: 5px;
+  }
+}
+@media (max-width: 600px) {
+  .game-library {
+    padding-top: 20px;
+  }
+  .play-banner {
+    min-height: 132px;
+    padding: 20px;
+    border-radius: 21px;
+    margin-bottom: 25px;
+  }
+  .banner-label {
+    font-size: 7px;
+  }
+  .play-banner h2 {
+    font-size: 36px;
+  }
+  .banner-art {
+    left: auto;
+    right: 28px;
+    width: 160px;
+    height: 132px;
+    opacity: 0.9;
+  }
+  .banner-art .bot-avatar {
+    width: 70px;
+    height: 70px;
+    left: 78px;
+    top: 25px;
+  }
+  .floating-tile {
+    width: 30px;
+    height: 30px;
+    border-radius: 8px;
+    font-size: 19px;
+  }
+  .tile-cross {
+    left: 70px;
+    top: 8px;
+  }
+  .tile-number {
+    left: 65px;
+    bottom: 13px;
+  }
+  .tile-disc {
+    display: none;
+  }
+  .banner-spark {
+    right: 0;
+    bottom: 12px;
+    font-size: 21px;
+  }
+  .shuffle-play {
+    align-self: end;
+    padding: 9px;
+    border-radius: 11px;
+    margin-bottom: 3px;
+  }
+  .shuffle-play > span {
+    display: none;
+  }
+  .shuffle-play svg {
+    width: 17px;
+    height: 17px;
+  }
+  .game-library .games-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+    gap: 13px;
+  }
+  .game-card .game-art {
+    height: 140px;
+  }
+  .game-card .card-copy {
+    padding: 11px;
+  }
+  .game-card .card-title h3 {
+    font-size: 12px;
+  }
+  .game-card .card-arrow svg {
+    width: 13px;
+    height: 13px;
+  }
+  .game-heading {
+    grid-template-columns: 38px minmax(0, 1fr) auto;
+    gap: 10px;
+  }
+  .back-games {
+    width: 38px;
+    height: 38px;
+    border-radius: 11px;
+  }
+  .game-heading h1 {
+    font-size: 22px;
+  }
+  .game-heading > .bot-badge {
+    grid-column: auto;
+    padding: 3px;
+    border: 0;
+    background: transparent;
+  }
+  .bot-badge .bot-avatar {
+    width: 32px;
+    height: 32px;
+  }
+  .bot-badge > span {
+    display: none;
+  }
+  .game-settings {
+    grid-template-columns: minmax(0, 1fr) auto;
+    gap: 6px;
+    padding-bottom: 12px;
+    margin-bottom: 12px;
+  }
+  .game-settings .mode-buttons button {
+    min-height: 34px;
+    font-size: 10px;
+    padding: 5px 3px;
+  }
+  .mode-utilities {
+    gap: 3px;
+  }
+  .mode-personal-best {
+    gap: 3px;
+  }
+  .mode-personal-best b {
+    font-size: 10px;
+  }
+  .mode-info-button {
+    width: 24px;
+  }
+  .mode-utilities .local-save-note {
+    min-width: 18px;
+  }
+  .mode-personal-best > svg {
+    display: none;
+  }
+  .more-games .game-art {
+    height: 115px;
+  }
+  .site-footer {
+    grid-template-columns: 1fr;
+    gap: 13px;
+  }
+  .site-footer > nav {
+    gap: 18px;
+    justify-content: space-between;
+  }
+  .site-footer > nav a {
+    font-size: 9px;
+  }
+  .site-footer > nav a > svg {
+    display: none;
+  }
+}
+@media (max-width: 360px) {
+  .game-card .game-art {
+    height: 125px;
+  }
+  .play-banner {
+    padding: 17px;
+  }
+  .play-banner h2 {
+    font-size: 32px;
+  }
+  .banner-art {
+    right: 23px;
+  }
+  .game-heading h1 {
+    font-size: 20px;
+  }
+}

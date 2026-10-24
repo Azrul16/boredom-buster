@@ -5,7 +5,7 @@
   "scripts": {
     "dev": "next dev",
     "build": "next build",
-    "postbuild": "node scripts/normalize-export.mjs",
+    "postbuild": "node scripts/normalize-export.mjs && node scripts/generate-offline.mjs",
     "start": "node scripts/serve.mjs",
     "preview": "node scripts/serve.mjs",
     "test:browser": "playwright test",

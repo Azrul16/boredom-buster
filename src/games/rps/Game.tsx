@@ -1,5 +1,6 @@
 "use client";
 import GameResult from "@/components/GameResult";
+import { useDifficulty } from "@/components/GameSettings";
 import { useEffect, useRef, useState } from "react";
 import { Toolbar } from "@/components/GameUI";
 import { useGame } from "@/hooks/useGame";
@@ -12,11 +13,14 @@ const choices = [
   ],
   names = ["Rock", "Paper", "Scissors"];
 export default function RPS() {
+  const { level } = useDifficulty();
+  const history = useRef<number[]>([]);
+  const turnNumber = useRef(0);
   const [score, setScore] = useState([0, 0]),
     [pick, setPick] = useState<number | null>(null),
     [cpu, setCpu] = useState<number | null>(null),
     [busy, setBusy] = useState(false),
-    [result, setResult] = useState("Your move. Make it count.");
+    [result, setResult] = useState("Your move");
   const timer = useRef<ReturnType<typeof setTimeout> | null>(null);
   const { finish } = useGame("rock-paper-scissors");
   const over = score.some((s) => s === 3);
@@ -32,7 +36,7 @@ export default function RPS() {
     setPick(null);
     setCpu(null);
     setBusy(false);
-    setResult("Your move. Make it count.");
+    setResult("Your move");
   }
   function play(i: number) {
     if (busy || over) return;
@@ -40,8 +44,21 @@ export default function RPS() {
     setCpu(null);
     setBusy(true);
     setResult("Rock… Paper… Scissors…");
+    const previous = [...history.current];
+    const turnIndex = turnNumber.current++;
+    history.current = [...history.current.slice(-9), i];
     timer.current = setTimeout(() => {
-      const c = Math.floor(Math.random() * 3),
+      const counts = [0, 1, 2].map(
+        (move) => previous.filter((value) => value === move).length,
+      );
+      const predicted = counts.indexOf(Math.max(...counts));
+      const botMove =
+        level === 0
+          ? turnIndex % 3
+          : level === 2 && previous.length > 0 && Math.random() < 0.75
+            ? (predicted + 1) % 3
+            : Math.floor(Math.random() * 3);
+      const c = botMove,
         win = (i - c + 3) % 3 === 1,
         draw = i === c;
       setCpu(c);
@@ -56,10 +73,10 @@ export default function RPS() {
         next.some((s) => s === 3)
           ? next[0] === 3
             ? "You take the match!"
-            : "CPU takes the match. Rematch?"
+            : "Ziggy takes the match. Rematch?"
           : win
             ? "You win this round!"
-            : "CPU wins this round.",
+            : "Ziggy wins this round.",
       );
       sound(win ? "score" : "lose");
       if (next.some((s) => s === 3)) finish(next[0], next[0] === 3);
@@ -70,7 +87,7 @@ export default function RPS() {
       <Toolbar
         stats={[
           ["You", score[0]],
-          ["CPU", score[1]],
+          ["Ziggy", score[1]],
           ["Match", "First to 3"],
         ]}
         onRestart={reset}
@@ -80,7 +97,9 @@ export default function RPS() {
           {pick === null ? choices[0] : choices[pick]}
         </span>
         <small>VS</small>
-        <span data-label="CPU">{cpu === null ? choices[0] : choices[cpu]}</span>
+        <span data-label="Ziggy">
+          {cpu === null ? choices[0] : choices[cpu]}
+        </span>
       </div>
       <div className="round-pips" aria-label="Match wins">
         <div>
@@ -107,10 +126,10 @@ export default function RPS() {
       </div>
       {over && (
         <GameResult
-          title={score[0] === 3 ? "You won the match!" : "CPU wins the match"}
+          title={score[0] === 3 ? "You won the match!" : "Ziggy wins the match"}
           stats={[
             ["You", score[0]],
-            ["CPU", score[1]],
+            ["Ziggy", score[1]],
           ]}
           celebrate={score[0] === 3}
           highlight={score[0] === 3 ? 0 : 1}

@@ -1,10 +1,13 @@
 "use client";
 import GameResult from "@/components/GameResult";
+import { useDifficulty } from "@/components/GameSettings";
 import { useEffect, useLayoutEffect, useRef, useState } from "react";
 import { Toolbar } from "@/components/GameUI";
 import { useGame, useKeys } from "@/hooks/useGame";
 import { sound } from "@/lib/audio";
 export default function Reaction() {
+  const { level } = useDifficulty();
+  const target = [350, 280, 220][level];
   const [phase, setPhase] = useState<
       "idle" | "wait" | "go" | "early" | "result"
     >("idle"),
@@ -19,6 +22,14 @@ export default function Reaction() {
     if (timer.current) clearTimeout(timer.current);
     setPhase("idle");
   }
+  useEffect(() => {
+    const stop = () => {
+      if (timer.current) clearTimeout(timer.current);
+      setPhase("idle");
+    };
+    window.addEventListener("boredom-customize", stop);
+    return () => window.removeEventListener("boredom-customize", stop);
+  }, []);
   useEffect(
     () => () => {
       if (timer.current) clearTimeout(timer.current);
@@ -33,7 +44,7 @@ export default function Reaction() {
     } else if (phase === "go") {
       const result = Math.round(performance.now() - start.current);
       setAttempts((a) => [...a.slice(-4), result]);
-      finish(result);
+      finish(result, result <= target);
       setPhase("result");
       sound("score");
     } else {
@@ -43,7 +54,7 @@ export default function Reaction() {
           start.current = performance.now();
           setPhase("go");
         },
-        1500 + Math.random() * 3500,
+        [1000, 1500, 1000][level] + Math.random() * [2500, 3500, 5000][level],
       );
     }
   }
@@ -123,7 +134,7 @@ export default function Reaction() {
       <p className="status" aria-live="polite">
         {phase === "result"
           ? `Latest: ${latest} ms · ${rating}`
-          : "How fast is your fast?"}
+          : `Target: ${target} ms`}
       </p>
       {(phase === "result" || phase === "early") && (
         <GameResult
@@ -136,7 +147,7 @@ export default function Reaction() {
                   ["Best", (best ?? latest ?? 0) + " ms"],
                 ]
           }
-          celebrate={phase === "result" && (latest ?? 999) < 280}
+          celebrate={phase === "result" && (latest ?? 999) <= target}
           onContinue={tap}
         />
       )}

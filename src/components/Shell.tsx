@@ -1,10 +1,16 @@
 "use client";
 import Link from "next/link";
 import { useEffect, useState } from "react";
-import { Gamepad2, Sun, Moon, Volume2, VolumeX } from "lucide-react";
+import { Gamepad2, Sun, Moon } from "lucide-react";
 import { readStore, writeStore } from "@/lib/storage";
+import { usePathname } from "next/navigation";
+import { useOffline } from "./OfflineSupport";
+import { SiteFooter } from "./SiteFooter";
+import { Customize } from "./Customize";
+import { WifiOff, CheckCircle2, LoaderCircle, HardDrive } from "lucide-react";
 export function Shell({ children }: { children: React.ReactNode }) {
   const [light, setLight] = useState(false);
+  const pathname = usePathname();
   useEffect(() => {
     const value = readStore(
       "theme",
@@ -33,14 +39,34 @@ export function Shell({ children }: { children: React.ReactNode }) {
             <span>Boredom Buster</span>
           </Link>
           <div className="nav-actions">
+            <OfflineBadge />
             <nav aria-label="Main navigation">
-              <Link href="/games/" className="nav-games">
+              <Link
+                href="/games/"
+                className="nav-games"
+                aria-current={
+                  pathname === "/" || pathname.startsWith("/games")
+                    ? "page"
+                    : undefined
+                }
+              >
                 Games
               </Link>
+              <Link
+                href="/progress/"
+                className="nav-records"
+                aria-label="My records"
+                aria-current={pathname === "/progress/" ? "page" : undefined}
+              >
+                <HardDrive size={16} />
+                <span>My records</span>
+              </Link>
             </nav>
+            <Customize />
             <button
               className="icon-button"
               aria-label="Toggle color theme"
+              title={light ? "Switch to dark mode" : "Switch to light mode"}
               onClick={toggle}
             >
               {light ? <Moon size={19} /> : <Sun size={19} />}
@@ -49,31 +75,46 @@ export function Shell({ children }: { children: React.ReactNode }) {
         </div>
       </header>
       <main id="main">{children}</main>
-      <footer className="wrap minimal-footer">
-        <span>Boredom Buster</span>
-        <nav aria-label="Footer">
-          <Link href="/about/">About</Link>
-          <Link href="/privacy/">Privacy</Link>
-        </nav>
-      </footer>
+      <SiteFooter>
+        <OfflineBadge />
+      </SiteFooter>
     </>
   );
 }
-export function Mute() {
-  const [muted, setMuted] = useState(true);
-  useEffect(() => setMuted(readStore("muted", true)), []);
+
+export function OfflineBadge() {
+  const { offline, mode } = useOffline();
+  const label = offline
+    ? mode === "ready"
+      ? "Playing offline"
+      : "You’re offline"
+    : mode === "ready"
+      ? "Ready offline"
+      : mode === "saving"
+        ? "Saving for offline"
+        : "";
+  if (!label) return null;
   return (
-    <button
-      className="icon-button"
-      aria-label={muted ? "Unmute sound effects" : "Mute sound effects"}
-      title={muted ? "Turn sound on" : "Turn sound off"}
-      aria-pressed={!muted}
-      onClick={() => {
-        writeStore("muted", !muted);
-        setMuted(!muted);
-      }}
+    <span
+      className={`connection-badge ${offline ? "is-offline" : ""}`}
+      aria-live="polite"
+      title={
+        mode === "ready"
+          ? "All 20 games are saved in this browser for offline play."
+          : mode === "saving"
+            ? "Keep this tab open online while your games download."
+            : "Visit online to save the games for offline play."
+      }
     >
-      {muted ? <VolumeX size={18} /> : <Volume2 size={18} />}
-    </button>
+      {offline ? (
+        <WifiOff size={14} />
+      ) : mode === "saving" ? (
+        <LoaderCircle className="saving-spinner" size={14} />
+      ) : (
+        <CheckCircle2 size={14} />
+      )}
+      <span>{label}</span>
+    </span>
   );
 }
+export { Mute } from "./SoundToggle";

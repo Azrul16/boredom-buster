@@ -5,6 +5,7 @@ test("Pen Fight keeps unlimited session scores and preserves them on restart", a
   await page.goto("/games/pen-fight/");
   await page.getByRole("progressbar", { name: "Pull power" }).waitFor();
   async function loseRound() {
+    await page.locator(".pen-desk canvas").scrollIntoViewIfNeeded();
     const box = (await page.locator(".pen-desk canvas").boundingBox())!;
     await page.mouse.move(
       box.x + (230 / 680) * box.width,
@@ -26,9 +27,9 @@ test("Pen Fight keeps unlimited session scores and preserves them on restart", a
     await expect(page.getByRole("dialog")).toBeVisible({ timeout: 8000 });
     await expect(
       page.getByRole("dialog").locator(".result-scoreboard"),
-    ).toHaveAttribute("aria-label", `Session score: You 0, CPU ${round}`);
+    ).toHaveAttribute("aria-label", `Session score: You 0, Ziggy ${round}`);
     await expect(page.getByRole("dialog").getByRole("heading")).toHaveText(
-      "CPU wins the round",
+      "Ziggy wins the round",
     );
     await expect(page.getByRole("status")).toContainText("Grab your purple", {
       timeout: 5000,
@@ -49,5 +50,5 @@ test("Pen Fight keeps unlimited session scores and preserves them on restart", a
   await loseRound();
   await expect(
     page.getByRole("dialog").locator(".result-scoreboard"),
-  ).toHaveAttribute("aria-label", "Session score: You 0, CPU 1");
+  ).toHaveAttribute("aria-label", "Session score: You 0, Ziggy 1");
 });

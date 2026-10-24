@@ -10,10 +10,10 @@ export default function ResultPopup({
 }) {
   return (
     <GameResult
-      title={won ? "Round won!" : "CPU wins the round"}
+      title={won ? "Round won!" : "Ziggy wins the round"}
       stats={[
         ["You", scores[0]],
-        ["CPU", scores[1]],
+        ["Ziggy", scores[1]],
       ]}
       celebrate={won}
       highlight={won ? 0 : 1}
